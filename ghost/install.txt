@@ -1,0 +1,3 @@
+Install ghost by following this address:
+
+https://bitnami.com/stack/ghost/installer
