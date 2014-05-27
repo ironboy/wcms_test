@@ -1,3 +1,7 @@
 Install ghost by following this address:
 
 https://bitnami.com/stack/ghost/installer
+
+NOTE: Choose 127.0.0.1 (localhost) as your IP-address.
+Choose a port such as 8080 for web and 4430 for secure web.
+
