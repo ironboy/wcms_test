@@ -14,6 +14,10 @@
 
 /* Component (SMACSS module) rules */
 @import "components/misc.css";
+
+/* Import our own stylesheet file */
+@import "titles.css";
+
 /* Optionally, add your own components here. */
 @import "print.css";
 
