@@ -1,0 +1,58 @@
+<?php
+
+/**
+ * @file
+ * A sample module for WU13 training.
+ *
+ * This module exposes a block that prints important
+ * system information for the user. It also exposes and
+ * administration area that allows the user to enter these
+ * messages.
+ */
+  
+/**
+ * Implements hook_help().
+ */
+function system_status_help($path, $arg) {
+  if ($path == 'admin/help#system_status') {
+    return t('A sample module that displays a text message for WU13 training.');
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function system_status_block_info() {
+  $blocks = array();
+  
+  $blocks['system_status'] = array(
+    'info' => t('The current system status'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function system_status_block_view($block_name = '') {
+  if ($block_name == 'system_status') {
+
+    $messages = array(
+      "Everything is terrible!",
+      "Everything is awesome!",
+      "I'm hungry!"
+    );
+
+    $message = $messages[rand(0,count($messages)-1)];
+
+
+    $block = array(
+      'subject' => t('System Status'),
+      'content' => t($message),
+    );
+    
+    return $block;
+  }
+}
