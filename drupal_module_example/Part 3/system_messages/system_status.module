@@ -1,0 +1,211 @@
+<?php
+
+/**
+ * @file
+ * A sample module for WU13 training.
+ *
+ * This module exposes a block that prints important
+ * system information for the user. It also exposes and
+ * administration area that allows the user to enter these
+ * messages.
+ */
+
+/**
+ * Implements hook_perm().
+ */
+function system_status_permission() {
+  return array(
+    'administer system status' => array(
+      'title' => t('Administer system status'),
+      'description' => t('Set the current system status and view the system status history.')
+    ),
+  );
+}
+
+
+
+/**
+ * Implements hook_menu().
+ */
+function system_status_menu() {
+  $items = array();
+
+  $items['admin/config/system/system_status'] = array(
+    'title' => 'System status',
+    'description' => 'Set the system status, which can displayed as a block through the block system.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('system_status_form'),
+    'access arguments' => array('administer system status'),
+  );
+
+  $items['admin/config/system/system_status/system_status'] = array(
+    'title' => 'System status',
+    'description' => 'Set the system status, which can displayed as a block through the block system.',
+    'access arguments' => array('administer system status'),
+    'weight' => -10,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['admin/config/system/system_status/history'] = array(
+    'title' => 'System status history',
+    'description' => 'View the system status history.',
+    'page callback' => 'system_status_history',
+    'access arguments' => array('administer system status'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+/**
+ * Display the form that enables users to enter the current system status.
+ */
+function system_status_form($form, &$form_state) {
+    
+  $form['system_status'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Status'),
+    '#description' => t('Enter the current system status.'),
+    '#default_value' => system_status_get_current_status(),
+    '#size' => 40,
+    '#maxlength' => 255,
+  );
+
+  $form['options']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save status'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit callback when a system status is being set..
+ *
+ * @see system_status_submit_form()
+ */
+function system_status_form_submit($form, &$form_state) {
+  $status = $form_state['values']['system_status'];
+  
+  $id = db_insert('system_status')
+    ->fields(array(
+     'status' => $status,
+    ))
+    ->execute();
+    
+  drupal_set_message('The system status has been saved.');
+}
+
+/**
+ * Validate callback when a system status is being set..
+ *
+ * @see system_status:submit_form()
+ */
+function system_status_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['system_status'])) {
+    form_set_error('System Status', 'You must enter a system status.');
+  }
+}
+
+/**
+ * Implements hook_help().
+ */
+function system_status_help($path, $arg) {
+  if ($path == 'admin/help#system_status') {
+    return t('A sample module that displays a text message for WU13 training.');
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function system_status_block_info() {
+  $blocks = array();
+  
+  $blocks['system_status'] = array(
+    'info' => t('The current system status'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function system_status_block_view($block_name = '') {
+  if ($block_name == 'system_status') {
+    $block = array(
+      'subject' => t('System Status'),
+      'content' => system_status_get_current_status(),
+    );
+    
+    return $block;
+  }
+}
+
+/**
+ * View the history of previously set system status.
+ */
+function system_status_history() {
+  $rows = array();
+  $build = array();
+  
+  $header = array(
+    array(
+      'data' => t('Title'),
+    ),
+  );
+
+  $result = db_query("SELECT status FROM {system_status}");
+  foreach ($result as $record) {
+    $rows[] = array(
+      check_plain($record->status),
+    );
+  }
+  
+  $build['system_status_clear_history_form'] = drupal_get_form('system_status_clear_history_form');
+  $build['system_status_table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#empty' => t('No system status has been set.'),
+  );  
+  
+  return $build;
+}
+
+/**
+ * Display the form that enables users to clear the system status history log.
+ */
+function system_status_clear_history_form($form, &$form_state) {
+  $form['options']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear system status log'),
+  );
+
+  return $form;  
+}
+
+/**
+ * Submit callback when the history log is being cleared.
+ *
+ * @see system_status_clear_history_submit_form()
+ */
+function system_status_clear_history_form_submit($form, &$form_state) {
+  db_delete('system_status')
+    ->execute();
+}
+
+/**
+ * Return the most recently entered system status.
+ */
+function system_status_get_current_status() {
+  $result = db_select('system_status', 's')
+    ->fields('s', array('status'))
+    ->range(0, 1)
+    ->execute();
+  $record = $result->fetch();
+  
+  return check_plain($record->status);
+}

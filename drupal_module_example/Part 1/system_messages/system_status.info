@@ -1,0 +1,9 @@
+name = System Status
+description = A module to display the current system status.
+core = 7.x
+package = WU13
+files[] = system_messages.module
+;files[] = first.test
+
+;dependencies[] = some_other_module
+;php = 5.2 - technically 5.2.5

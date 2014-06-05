@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the system status module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function system_status_schema() {
+  $schema['system_status'] = array(
+    'description' => 'System status log.',
+    'fields' => array(
+      'sid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique system status ID.',
+      ),  
+      'status' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'System status.',
+      ),
+      'entered_by' => array(
+        'type' => 'varchar',
+        'length' => 60,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The user who saved the system status.',
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Timestamp for when system status was entered.',
+      ),
+    ),
+    'primary key' => array('sid'),
+  );
+  
+  return $schema;
+}
+
+/**
+ * Add user and timestamp columns system_status table.
+ */
+function system_status_update_7000() {
+  db_add_field('system_status', 'entered_by', array('type' => 'varchar', 'length' => 60, 'not null' => TRUE, 'default' => '', 'description' => 'The user who saved the system status.'));
+  db_add_field('system_status', 'timestamp', array('type' => 'int', 'not null' => TRUE, 'default' => '0', 'description' => 'Timestamp for when system status was entered.'));
+  
+  return t('Entered By and Timestamp fields have been added to the System Status module.');
+}
