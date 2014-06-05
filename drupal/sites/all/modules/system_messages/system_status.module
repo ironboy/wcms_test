@@ -11,6 +11,20 @@
  */
 
 /**
+ * Implements hook_perm().
+ */
+function system_status_permission() {
+  return array(
+    'administer system status' => array(
+      'title' => t('Administer system status'),
+      'description' => t('Set the current system status and view the system status history.')
+    ),
+  );
+}
+
+
+
+/**
  * Implements hook_menu().
  */
 function system_status_menu() {
@@ -21,7 +35,23 @@ function system_status_menu() {
     'description' => 'Set the system status, which can displayed as a block through the block system.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('system_status_form'),
-    'access arguments' => array('set system status'),
+    'access arguments' => array('administer system status'),
+  );
+
+  $items['admin/config/system/system_status/system_status'] = array(
+    'title' => 'System status',
+    'description' => 'Set the system status, which can displayed as a block through the block system.',
+    'access arguments' => array('administer system status'),
+    'weight' => -10,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['admin/config/system/system_status/history'] = array(
+    'title' => 'System status history',
+    'description' => 'View the system status history.',
+    'page callback' => 'system_status_history',
+    'access arguments' => array('administer system status'),
+    'type' => MENU_LOCAL_TASK,
   );
 
   return $items;
@@ -31,25 +61,39 @@ function system_status_menu() {
  * Display the form that enables users to enter the current system status.
  */
 function system_status_form($form, &$form_state) {
+    
   $form['system_status'] = array(
     '#type' => 'textfield',
     '#title' => t('Status'),
-    '#description' => t('The current system status.'),
-    '#default_value' => variable_get('system_status', ''),
+    '#description' => t('Enter the current system status.'),
+    '#default_value' => system_status_get_current_status(),
     '#size' => 40,
     '#maxlength' => 255,
   );
 
-  return system_settings_form($form);
+  $form['options']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save status'),
+  );
+
+  return $form;
 }
 
 /**
- * Submit callback when a system status is being set.
+ * Submit callback when a system status is being set..
  *
- * @see system_status:submit_form()
+ * @see system_status_submit_form()
  */
 function system_status_form_submit($form, &$form_state) {
-  variable_set('system_status', $form_state['values']['system_status']);
+  $status = $form_state['values']['system_status'];
+  
+  $id = db_insert('system_status')
+    ->fields(array(
+     'status' => $status,
+    ))
+    ->execute();
+    
+  drupal_set_message('The system status has been saved.');
 }
 
 /**
@@ -60,10 +104,6 @@ function system_status_form_submit($form, &$form_state) {
 function system_status_form_validate($form, &$form_state) {
   if (empty($form_state['values']['system_status'])) {
     form_set_error('System Status', 'You must enter a system status.');
-  }
-
-  if ($form_state['values']['system_status'] == "fuck") {
-    form_set_error('System Status', "Don't be rude!");
   }
 }
 
@@ -97,9 +137,76 @@ function system_status_block_view($block_name = '') {
   if ($block_name == 'system_status') {
     $block = array(
       'subject' => t('System Status'),
-      'content' => variable_get('system_status', ''),
+      'content' => system_status_get_current_status(),
     );
     
     return $block;
   }
+}
+
+/**
+ * View the history of previously set system status.
+ */
+function system_status_history() {
+  $rows = array();
+  $build = array();
+  
+  $header = array(
+    array(
+      'data' => t('Title'),
+    ),
+  );
+
+  $result = db_query("SELECT status FROM {system_status}");
+  foreach ($result as $record) {
+    $rows[] = array(
+      check_plain($record->status),
+    );
+  }
+  
+  $build['system_status_clear_history_form'] = drupal_get_form('system_status_clear_history_form');
+  $build['system_status_table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#empty' => t('No system status has been set.'),
+  );  
+  
+  return $build;
+}
+
+/**
+ * Display the form that enables users to clear the system status history log.
+ */
+function system_status_clear_history_form($form, &$form_state) {
+  $form['options']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear system status log'),
+  );
+
+  return $form;  
+}
+
+/**
+ * Submit callback when the history log is being cleared.
+ *
+ * @see system_status_clear_history_submit_form()
+ */
+function system_status_clear_history_form_submit($form, &$form_state) {
+  db_delete('system_status')
+    ->execute();
+}
+
+/**
+ * Return the most recently entered system status.
+ */
+function system_status_get_current_status() {
+  $result = db_select('system_status', 's')
+    ->fields('s', array('status'))
+    ->orderBy('sid', 'DESC')
+    ->range(0, 1)
+    ->execute();
+  $record = $result->fetch();
+  
+  return check_plain($record ? $record->status : '');
 }

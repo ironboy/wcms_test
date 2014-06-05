@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the system status module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function system_status_schema() {
+  $schema['system_status'] = array(
+    'description' => 'System status log.',
+    'fields' => array(
+      'sid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique system status ID.',
+      ),  
+      'status' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'System status.',
+      ),
+    ),
+    'primary key' => array('sid'),
+  );
+  
+  return $schema;
+}
