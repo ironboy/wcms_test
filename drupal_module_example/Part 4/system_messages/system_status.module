@@ -226,9 +226,10 @@ function system_status_clear_history_form_submit($form, &$form_state) {
 function system_status_get_current_status() {
   $result = db_select('system_status', 's')
     ->fields('s', array('status'))
+    ->orderBy('sid', 'DESC')
     ->range(0, 1)
     ->execute();
   $record = $result->fetch();
   
-  return check_plain($record->status);
+  return check_plain($record ? $record->status : '');
 }
